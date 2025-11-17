@@ -85,6 +85,7 @@ $<TARGET_FILE:idf::esp-tls>
 $<TARGET_FILE:idf::tcp_transport>
 $<TARGET_FILE:idf::esp_http_client>
 $<TARGET_FILE:idf::esp_https_ota>
+$<TARGET_FILE:idf::json>
 $<TARGET_FILE:idf::nvs_flash>
 $<TARGET_FILE:idf::esp_netif>
 $<TARGET_FILE:idf::esp_phy>
@@ -134,5 +135,6 @@ $<TARGET_FILE:__idf_driver>
 $<TARGET_FILE:idf::protocol_examples_common>
 $<TARGET_FILE:__idf_esp_eth>
 $<TARGET_FILE:idf::main>
+$<TARGET_FILE:__idf_json>
 $<TARGET_FILE:__idf_protocomm>
 $<TARGET_FILE:__idf_protocol_examples_common>

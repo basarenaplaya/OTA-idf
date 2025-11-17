@@ -244,6 +244,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/nvs_flash/cmake_install.cmake")
 endif()
 

@@ -419,6 +419,13 @@ C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_https_ota/
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_https_ota/CMakeFiles/install.dir
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_https_ota/CMakeFiles/install/local.dir
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_https_ota/CMakeFiles/install/strip.dir
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/CMakeFiles/__idf_json.dir
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/CMakeFiles/edit_cache.dir
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/CMakeFiles/rebuild_cache.dir
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/CMakeFiles/list_install_components.dir
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/CMakeFiles/install.dir
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/CMakeFiles/install/local.dir
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/CMakeFiles/install/strip.dir
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/nvs_flash/CMakeFiles/__idf_nvs_flash.dir
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/nvs_flash/CMakeFiles/edit_cache.dir
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/nvs_flash/CMakeFiles/rebuild_cache.dir

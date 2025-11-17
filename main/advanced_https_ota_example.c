@@ -25,6 +25,8 @@
 #include "secrets/config.h"
 #include "cJSON.h"
 #include <stdlib.h>
+#include "esp_sntp.h"
+#include <time.h>
 
 #if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 #include "esp_efuse.h"
@@ -43,6 +45,30 @@ extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
 #define OTA_URL_SIZE 256
+
+static void obtain_time(void)
+{
+    ESP_LOGI(TAG, "Initializing SNTP");
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_init();
+    
+    // Wait for time to be set
+    int retry = 0;
+    const int max_retries = 20;
+    time_t now = time(NULL);
+    struct tm timeinfo = {0};
+    localtime_r(&now, &timeinfo);
+    
+    while (timeinfo.tm_year < (2023 - 1900) && ++retry < max_retries) {
+        ESP_LOGI(TAG, "Waiting for system time to be set (%d/%d)...", retry, max_retries);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        now = time(NULL);
+        localtime_r(&now, &timeinfo);
+    }
+    
+    ESP_LOGI(TAG, "System time is set to: %s", asctime(&timeinfo));
+}
 
 #ifdef CONFIG_EXAMPLE_ENABLE_OTA_RESUMPTION
 
@@ -293,7 +319,6 @@ void checkForUpdates(void) {
 
             esp_https_ota_config_t ota_config = {
                 .http_config = &ota_http_config,
-                .public_key_pem = PUBLIC_KEY, // This enables the signature check
             };
 
             esp_err_t err = esp_https_ota(&ota_config);
@@ -353,6 +378,9 @@ void app_main(void)
      * examples/protocols/README.md for more information about this function.
     */
     ESP_ERROR_CHECK(example_connect());
+    
+    // Set system time via SNTP before any HTTPS operations
+    obtain_time();
 
 #if defined(CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE)
     /**

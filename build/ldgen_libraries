@@ -85,6 +85,7 @@ C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp-tls/libesp
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/tcp_transport/libtcp_transport.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_http_client/libesp_http_client.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_https_ota/libesp_https_ota.a
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/libjson.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/nvs_flash/libnvs_flash.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_netif/libesp_netif.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_phy/libesp_phy.a
@@ -134,5 +135,6 @@ C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/driver/libdriv
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/protocol_examples_common/libprotocol_examples_common.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/esp_eth/libesp_eth.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/main/libmain.a
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/json/libjson.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/protocomm/libprotocomm.a
 C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/protocol_examples_common/libprotocol_examples_common.a

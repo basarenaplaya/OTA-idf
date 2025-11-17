@@ -2,7 +2,7 @@ idf_component_register(SRCS "advanced_https_ota_example.c" "ble_helper/bluedroid
                     "ble_helper/ble_api.c"
                     INCLUDE_DIRS "." "./ble_helper/include/" "secrets"
                     PRIV_REQUIRES esp_http_client app_update esp_https_ota json
-                                  nvs_flash esp_netif esp_wifi esp_event esp_log mbedtls efuse bt
+                                  nvs_flash esp_netif esp_wifi efuse bt
                                   protocomm
                     # Embed the server root certificate into the final binary
                     EMBED_TXTFILES ${project_dir}/server_certs/ca_cert.pem)
