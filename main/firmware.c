@@ -682,6 +682,7 @@ void checkForUpdates(void) {
 void advanced_ota_example_task(void *pvParameter)
 {
     ESP_LOGI(TAG, "Starting custom OTA task with manifest check...");
+    ESP_LOGI(TAG, "Current firmware version: %s", FIRMWARE_VERSION);
 
     // The example's app_main already calls example_connect() which blocks until
     // the network interface is up. Proceed to an initial check immediately.
@@ -690,6 +691,7 @@ void advanced_ota_example_task(void *pvParameter)
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(UPDATE_CHECK_INTERVAL_MS));
         ESP_LOGI(TAG, "--------------------");
+        ESP_LOGI(TAG, "Current firmware version: %s", FIRMWARE_VERSION);
         ESP_LOGI(TAG, "Checking for a new firmware version...");
         checkForUpdates();
     }
