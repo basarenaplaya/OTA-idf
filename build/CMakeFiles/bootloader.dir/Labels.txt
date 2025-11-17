@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/CMakeFiles/bootloader
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/CMakeFiles/bootloader.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/CMakeFiles/bootloader-complete.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

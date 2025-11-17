@@ -1,0 +1,35 @@
+# Build artifacts
+build/
+sdkconfig
+sdkconfig.old
+bootloader/
+partitions_singleapp.bin
+partitions_two_ota.bin
+
+
+# VS Code specific files
+.vscode/
+.history/
+
+# ESP-IDF component registry downloads
+components/*/build/
+components/*/sdkconfig
+components/*/sdkconfig.old
+
+# Other common temporary files
+*.pyc
+*.o
+*.d
+*.elf
+*.bin
+*.map
+*.obj
+*.su
+*.bak
+*.swp
+*~
+# Logs
+*.log
+
+# Ignore secrets directory
+main/secrets/
