@@ -28,9 +28,10 @@
 #include "esp_sntp.h"
 #include <time.h>
 
-/* mbedTLS for RSA signature verification */
+/* mbedTLS for RSA signature verification and AES decryption */
 #include <mbedtls/pk.h>
 #include <mbedtls/md.h>
+#include <mbedtls/aes.h>
 
 #if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 #include "esp_efuse.h"
@@ -44,7 +45,7 @@
 #include "ble_api.h"
 #endif
 
-static const char *TAG = "advanced_https_ota_example";
+static const char *TAG = "firmware";
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
@@ -325,19 +326,39 @@ static uint8_t* download_signature(const char* signature_url, size_t* out_sig_le
 }
 
 /**
- * Verify firmware binary with RSA-PSS signature
+ * Verify encrypted firmware binary with RSA-PSS signature
+ * Downloads encrypted firmware, decrypts it on-the-fly, computes hash, and verifies signature
  * Returns ESP_OK if signature is valid, ESP_FAIL otherwise
  */
-static esp_err_t verify_firmware_signature(const char* firmware_url, const uint8_t* signature, size_t sig_len) {
+/**
+ * Download encrypted firmware, decrypt, verify signature, and flash to OTA partition
+ * All operations done in a single pass to avoid downloading twice
+ * Returns ESP_OK if successful, ESP_FAIL otherwise
+ */
+static esp_err_t download_decrypt_verify_and_flash(const char* firmware_url, const uint8_t* signature, size_t sig_len) {
     if (!firmware_url || !signature || sig_len == 0) {
-        ESP_LOGE(TAG, "Invalid firmware URL or signature");
+        ESP_LOGE(TAG, "Invalid parameters");
         return ESP_FAIL;
     }
 
-    /* Initialize RSA context and public key */
+    esp_err_t err;
+    esp_ota_handle_t ota_handle = 0;
+    const esp_partition_t *update_partition = NULL;
+    
+    /* Get next OTA partition */
+    update_partition = esp_ota_get_next_update_partition(NULL);
+    if (update_partition == NULL) {
+        ESP_LOGE(TAG, "Failed to find OTA partition");
+        return ESP_FAIL;
+    }
+    
+    ESP_LOGI(TAG, "Writing to partition subtype %d at offset 0x%"PRIx32,
+             update_partition->subtype, update_partition->address);
+
+    /* Initialize RSA context for signature verification */
     mbedtls_pk_context pk;
     mbedtls_pk_init(&pk);
-
+    
     int ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char *)PUBLIC_KEY, strlen(PUBLIC_KEY) + 1);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed to parse public key (mbedtls error: %d)", ret);
@@ -345,94 +366,234 @@ static esp_err_t verify_firmware_signature(const char* firmware_url, const uint8
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Public key loaded successfully");
-
-    /* Download firmware and compute SHA256 hash */
-    esp_http_client_config_t config = {
-        .url = firmware_url,
-        .cert_pem = GITHUB_ROOT_CA_CERT,
-        .timeout_ms = 20000,
-    };
-
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    if (!client) {
-        ESP_LOGE(TAG, "Failed to initialize HTTP client for firmware verification");
+    /* Initialize AES decryption context */
+    mbedtls_aes_context aes_ctx;
+    mbedtls_aes_init(&aes_ctx);
+    
+    ret = mbedtls_aes_setkey_dec(&aes_ctx, AES_KEY, 256);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to set AES key (mbedtls error: %d)", ret);
+        mbedtls_aes_free(&aes_ctx);
         mbedtls_pk_free(&pk);
         return ESP_FAIL;
     }
 
-    if (esp_http_client_open(client, 0) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to open HTTP connection for firmware");
-        esp_http_client_cleanup(client);
-        mbedtls_pk_free(&pk);
-        return ESP_FAIL;
-    }
-
-    int firmware_size = esp_http_client_fetch_headers(client);
-    if (firmware_size <= 0) {
-        ESP_LOGE(TAG, "Firmware fetch returned no content");
-        esp_http_client_cleanup(client);
-        mbedtls_pk_free(&pk);
-        return ESP_FAIL;
-    }
-
-    /* Initialize SHA256 context for hash computation */
+    /* Initialize SHA256 for hash computation */
     mbedtls_md_context_t md_ctx;
     mbedtls_md_init(&md_ctx);
     const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
     mbedtls_md_setup(&md_ctx, md_info, 0);
     mbedtls_md_starts(&md_ctx);
 
-    /* Read firmware in chunks and compute hash */
-    uint8_t chunk_buffer[2048];
+    /* Open HTTP connection */
+    esp_http_client_config_t config = {
+        .url = firmware_url,
+        .cert_pem = GITHUB_ROOT_CA_CERT,
+        .timeout_ms = 20000,
+    };
+    
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to initialize HTTP client");
+        mbedtls_md_free(&md_ctx);
+        mbedtls_aes_free(&aes_ctx);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    if (esp_http_client_open(client, 0) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open HTTP connection");
+        esp_http_client_cleanup(client);
+        mbedtls_md_free(&md_ctx);
+        mbedtls_aes_free(&aes_ctx);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    int firmware_size = esp_http_client_fetch_headers(client);
+    if (firmware_size <= 0) {
+        ESP_LOGE(TAG, "Invalid firmware size");
+        esp_http_client_cleanup(client);
+        mbedtls_md_free(&md_ctx);
+        mbedtls_aes_free(&aes_ctx);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    /* Begin OTA update */
+    err = esp_ota_begin(update_partition, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
+        esp_http_client_cleanup(client);
+        mbedtls_md_free(&md_ctx);
+        mbedtls_aes_free(&aes_ctx);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Downloading, decrypting, and flashing firmware (%d bytes)...", firmware_size);
+
+    /* Download, decrypt, hash, and write to flash in chunks */
+    #define CHUNK_SIZE 2048
+    uint8_t *encrypted_buffer = malloc(CHUNK_SIZE);
+    uint8_t *decrypted_buffer = malloc(CHUNK_SIZE);
+    uint8_t *previous_buffer = malloc(CHUNK_SIZE);  // Store previous chunk to handle padding
+    
+    if (!encrypted_buffer || !decrypted_buffer || !previous_buffer) {
+        ESP_LOGE(TAG, "Failed to allocate memory for buffers");
+        free(encrypted_buffer);
+        free(decrypted_buffer);
+        free(previous_buffer);
+        esp_ota_abort(ota_handle);
+        esp_http_client_cleanup(client);
+        mbedtls_md_free(&md_ctx);
+        mbedtls_aes_free(&aes_ctx);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+    
+    /* Initialize IV - will be updated automatically by CBC mode */
+    uint8_t iv_working[16];
+    memcpy(iv_working, AES_IV, 16);
+    
     int total_read = 0;
     int read_len;
+    int prev_len = 0;
+    bool ota_failed = false;
+    bool is_first_chunk = true;
 
-    ESP_LOGI(TAG, "Computing SHA256 hash of firmware (%d bytes)...", firmware_size);
-
-    while (total_read < firmware_size) {
-        int to_read = (firmware_size - total_read < sizeof(chunk_buffer)) ? 
-                      (firmware_size - total_read) : sizeof(chunk_buffer);
+    while (total_read < firmware_size && !ota_failed) {
+        int to_read = (firmware_size - total_read < CHUNK_SIZE) ? 
+                      (firmware_size - total_read) : CHUNK_SIZE;
         
-        read_len = esp_http_client_read(client, (char*)chunk_buffer, to_read);
-        if (read_len <= 0) {
-            ESP_LOGE(TAG, "Error reading firmware chunk");
-            esp_http_client_cleanup(client);
-            mbedtls_md_free(&md_ctx);
-            mbedtls_pk_free(&pk);
-            return ESP_FAIL;
+        /* Ensure block alignment for AES */
+        to_read = (to_read / 16) * 16;
+        if (to_read == 0 && total_read < firmware_size) {
+            to_read = 16;
         }
 
-        mbedtls_md_update(&md_ctx, chunk_buffer, read_len);
+        read_len = esp_http_client_read(client, (char*)encrypted_buffer, to_read);
+        if (read_len <= 0) {
+            ESP_LOGE(TAG, "Error reading firmware chunk");
+            ota_failed = true;
+            break;
+        }
+
+        /* Decrypt chunk - IV is automatically updated for next block in CBC mode */
+        ret = mbedtls_aes_crypt_cbc(&aes_ctx, MBEDTLS_AES_DECRYPT, read_len,
+                                     iv_working, encrypted_buffer, decrypted_buffer);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "AES decryption failed (mbedtls error: %d)", ret);
+            ota_failed = true;
+            break;
+        }
+
+        /* Debug: Log first decrypted bytes on first chunk */
+        if (is_first_chunk) {
+            ESP_LOGI(TAG, "First decrypted bytes: %02x %02x %02x %02x %02x %02x %02x %02x",
+                     decrypted_buffer[0], decrypted_buffer[1], decrypted_buffer[2], decrypted_buffer[3],
+                     decrypted_buffer[4], decrypted_buffer[5], decrypted_buffer[6], decrypted_buffer[7]);
+            is_first_chunk = false;
+        }
+
+        /* Process previous chunk if we have one (delayed write to handle padding) */
+        if (prev_len > 0) {
+            /* Write previous chunk to hash and flash */
+            mbedtls_md_update(&md_ctx, previous_buffer, prev_len);
+            err = esp_ota_write(ota_handle, previous_buffer, prev_len);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "esp_ota_write failed (%s)", esp_err_to_name(err));
+                ota_failed = true;
+                break;
+            }
+        }
+
+        /* Store current decrypted chunk as previous for next iteration */
+        memcpy(previous_buffer, decrypted_buffer, read_len);
+        prev_len = read_len;
+
         total_read += read_len;
     }
 
-    esp_http_client_cleanup(client);
+    /* Handle the last chunk - remove PKCS7 padding */
+    if (!ota_failed && prev_len > 0) {
+        /* Get padding length from last byte (PKCS7 padding) */
+        uint8_t padding_len = previous_buffer[prev_len - 1];
+        
+        /* Validate padding length (should be 1-16 for AES) */
+        if (padding_len > 0 && padding_len <= 16 && padding_len <= prev_len) {
+            /* Verify all padding bytes are correct */
+            bool valid_padding = true;
+            for (int i = prev_len - padding_len; i < prev_len; i++) {
+                if (previous_buffer[i] != padding_len) {
+                    valid_padding = false;
+                    break;
+                }
+            }
+            
+            if (valid_padding) {
+                prev_len -= padding_len;
+                ESP_LOGI(TAG, "Removed %d bytes of PKCS7 padding", padding_len);
+            }
+        }
+        
+        /* Write final chunk without padding */
+        if (prev_len > 0) {
+            mbedtls_md_update(&md_ctx, previous_buffer, prev_len);
+            err = esp_ota_write(ota_handle, previous_buffer, prev_len);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "esp_ota_write failed on final chunk (%s)", esp_err_to_name(err));
+                ota_failed = true;
+            }
+        }
+    }
 
-    /* Finalize hash */
-    uint8_t hash[32];  /* SHA256 = 32 bytes */
+    esp_http_client_cleanup(client);
+    mbedtls_aes_free(&aes_ctx);
+    free(encrypted_buffer);
+    free(decrypted_buffer);
+    free(previous_buffer);
+
+    if (ota_failed) {
+        esp_ota_abort(ota_handle);
+        mbedtls_md_free(&md_ctx);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    /* Finalize hash and verify signature */
+    uint8_t hash[32];
     mbedtls_md_finish(&md_ctx, hash);
     mbedtls_md_free(&md_ctx);
 
-    ESP_LOGI(TAG, "Firmware hash computed (32 bytes)");
-
-    /* Verify signature */
-    ret = mbedtls_pk_verify(
-        &pk,
-        MBEDTLS_MD_SHA256,
-        hash, 32,
-        signature, sig_len
-    );
-
+    ESP_LOGI(TAG, "Verifying signature of decrypted firmware...");
+    ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA256, hash, 32, signature, sig_len);
     mbedtls_pk_free(&pk);
 
-    if (ret == 0) {
-        ESP_LOGI(TAG, "✓ Firmware signature verification PASSED");
-        return ESP_OK;
-    } else {
-        ESP_LOGE(TAG, "✗ Firmware signature verification FAILED (mbedtls error: %d)", ret);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "✗ Signature verification FAILED (mbedtls error: %d)", ret);
+        esp_ota_abort(ota_handle);
         return ESP_FAIL;
     }
+
+    ESP_LOGI(TAG, "✓ Signature verification PASSED");
+
+    /* Finalize OTA update */
+    err = esp_ota_end(ota_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_end failed (%s)", esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+
+    /* Set boot partition to new firmware */
+    err = esp_ota_set_boot_partition(update_partition);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)", esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "OTA update successful!");
+    return ESP_OK;
 }
 
 // Core update-checking function: fetch manifest, parse and trigger OTA if newer
@@ -484,9 +645,9 @@ void checkForUpdates(void) {
 
         ESP_LOGI(TAG, "Update Check: Current=%s, Available=%s", FIRMWARE_VERSION, newVersion);
         if (compareVersionStrings(newVersion, FIRMWARE_VERSION) > 0) {
-            ESP_LOGI(TAG, "New version found. Verifying firmware signature before OTA...");
+            ESP_LOGI(TAG, "New version found. Downloading signature...");
 
-            /* Download and verify signature */
+            /* Download signature */
             size_t signature_len = 0;
             uint8_t* signature = download_signature(signature_url_item->valuestring, &signature_len);
             
@@ -496,34 +657,18 @@ void checkForUpdates(void) {
                 return;
             }
 
-            /* Verify firmware with signature */
-            esp_err_t verify_result = verify_firmware_signature(file_url_item->valuestring, signature, signature_len);
+            ESP_LOGI(TAG, "Starting secure OTA: decrypt → verify → flash...");
+
+            /* Single-pass: download encrypted firmware, decrypt, verify, and flash */
+            esp_err_t result = download_decrypt_verify_and_flash(file_url_item->valuestring, signature, signature_len);
             free(signature);
 
-            if (verify_result != ESP_OK) {
-                ESP_LOGE(TAG, "Firmware signature verification failed - aborting OTA update");
-                cJSON_Delete(json);
-                return;
-            }
-
-            ESP_LOGI(TAG, "Signature verified successfully. Proceeding with OTA update...");
-
-            // Configure the OTA component with the data from our manifest
-            esp_http_client_config_t ota_http_config = {};
-            ota_http_config.url = file_url_item->valuestring;
-            ota_http_config.cert_pem = GITHUB_ROOT_CA_CERT;
-
-            esp_https_ota_config_t ota_config = {
-                .http_config = &ota_http_config,
-            };
-
-            esp_err_t err = esp_https_ota(&ota_config);
-            if (err == ESP_OK) {
-                ESP_LOGI(TAG, "OTA Update successful, rebooting...");
-                vTaskDelay(pdMS_TO_TICKS(1000));
+            if (result == ESP_OK) {
+                ESP_LOGI(TAG, "✓ Secure OTA complete! Rebooting in 2 seconds...");
+                vTaskDelay(pdMS_TO_TICKS(2000));
                 esp_restart();
             } else {
-                ESP_LOGE(TAG, "Firmware upgrade failed with error: %s", esp_err_to_name(err));
+                ESP_LOGE(TAG, "✗ Secure OTA failed - staying on current firmware");
             }
         } else {
             ESP_LOGI(TAG, "No new version available.");
@@ -617,5 +762,5 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_ble_helper_init());
 #endif
 
-    xTaskCreate(&advanced_ota_example_task, "advanced_ota_example_task", 1024 * 8, NULL, 5, NULL);
+    xTaskCreate(&advanced_ota_example_task, "advanced_ota_example_task", 1024 * 12, NULL, 5, NULL);
 }

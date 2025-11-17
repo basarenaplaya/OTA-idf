@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "advanced_https_ota",
-    "project_version":    "2d044ef-dirty",
+    "project_version":    "b590bde-dirty",
     "project_path":       "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota",
     "idf_path":           "C:/Espressif/frameworks/esp-idf-v5.5.1",
     "build_dir":          "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build",
@@ -985,7 +985,7 @@
             "managed_reqs": [],
             "managed_priv_reqs": [ "protocol_examples_common" ],
             "file": "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/main/libmain.a",
-            "sources": [ "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/advanced_https_ota_example.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/ble_helper/bluedroid_gatts.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/ble_helper/nimble_gatts.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/ble_helper/ble_api.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/ca_cert.pem.S" ],
+            "sources": [ "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/firmware.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/ble_helper/bluedroid_gatts.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/ble_helper/nimble_gatts.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main/ble_helper/ble_api.c", "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/ca_cert.pem.S" ],
             "include_dirs": [ ".", "./ble_helper/include/", "secrets" ]
         },
         "mbedtls": {
