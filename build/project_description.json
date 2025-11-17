@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "advanced_https_ota",
-    "project_version":    "1f51824-dirty",
+    "project_version":    "2d044ef-dirty",
     "project_path":       "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota",
     "idf_path":           "C:/Espressif/frameworks/esp-idf-v5.5.1",
     "build_dir":          "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build",
@@ -981,7 +981,7 @@
             "type": "LIBRARY",
             "lib": "__idf_main",
             "reqs": [],
-            "priv_reqs": [ "esp_http_client", "app_update", "esp_https_ota", "json", "nvs_flash", "esp_netif", "esp_wifi", "efuse", "bt", "protocomm", "protocol_examples_common" ],
+            "priv_reqs": [ "esp_http_client", "app_update", "esp_https_ota", "json", "nvs_flash", "esp_netif", "esp_wifi", "efuse", "bt", "protocomm", "mbedtls", "protocol_examples_common" ],
             "managed_reqs": [],
             "managed_priv_reqs": [ "protocol_examples_common" ],
             "file": "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build/esp-idf/main/libmain.a",
@@ -2533,7 +2533,7 @@
             "dir": "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/main",
             "lib": "__idf_main",
             "reqs": [],
-            "priv_reqs": [ "esp_http_client", "app_update", "esp_https_ota", "json", "nvs_flash", "esp_netif", "esp_wifi", "efuse", "bt", "protocomm", "protocol_examples_common" ],
+            "priv_reqs": [ "esp_http_client", "app_update", "esp_https_ota", "json", "nvs_flash", "esp_netif", "esp_wifi", "efuse", "bt", "protocomm", "mbedtls", "protocol_examples_common" ],
             "managed_reqs": [],
             "managed_priv_reqs": [ "protocol_examples_common" ],
             "include_dirs": [ ".", "./ble_helper/include/", "secrets" ]

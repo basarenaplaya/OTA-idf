@@ -353,7 +353,7 @@ Mbed TLS_IS_TOP_LEVEL:STATIC=OFF
 Mbed TLS_SOURCE_DIR:STATIC=C:/Espressif/frameworks/esp-idf-v5.5.1/components/mbedtls/mbedtls
 
 //No help, variable specified on the command line.
-PYTHON:UNINITIALIZED=C:\Espressif\python_env\idf5.5_py3.12_env\Scripts\python.exe
+PYTHON:UNINITIALIZED=C:\Espressif\python_env\idf5.5_py3.11_env\Scripts\python.exe
 
 //No help, variable specified on the command line.
 PYTHON_DEPS_CHECKED:UNINITIALIZED=1
@@ -599,7 +599,7 @@ C_COMPILER_SUPPORTS_WFORMAT_SIGNEDNESS:INTERNAL=1
 //Details about finding Git
 FIND_PACKAGE_MESSAGE_DETAILS_Git:INTERNAL=[C:/Espressif/tools/tools/idf-git/2.39.2/cmd/git.exe][v2.39.2.windows.1()]
 //Details about finding Python3
-FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[C:/Espressif/python_env/idf5.5_py3.12_env/Scripts/python.exe][cfound components: Interpreter ][v3.12.0()]
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[C:/Espressif/python_env/idf5.5_py3.11_env/Scripts/python.exe][cfound components: Interpreter ][v3.11.2()]
 //Details about finding Threads
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //ADVANCED property for variable: GIT_EXECUTABLE
@@ -610,10 +610,10 @@ _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL=C:/Program Files (x86)/advanc
 _Python3_Compiler_REASON_FAILURE:INTERNAL=
 //Development reason failure
 _Python3_Development_REASON_FAILURE:INTERNAL=
-_Python3_EXECUTABLE:INTERNAL=C:/Espressif/python_env/idf5.5_py3.12_env/Scripts/python.exe
+_Python3_EXECUTABLE:INTERNAL=C:/Espressif/python_env/idf5.5_py3.11_env/Scripts/python.exe
 //Python3 Properties
-_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;12;0;32;64;;;abi3;C:\Users\Scuffy\AppData\Local\Programs\Python\Python312\Lib;C:\Espressif\python_env\idf5.5_py3.12_env\Lib;C:\Espressif\python_env\idf5.5_py3.12_env\Lib\site-packages;C:\Espressif\python_env\idf5.5_py3.12_env\Lib\site-packages
-_Python3_INTERPRETER_SIGNATURE:INTERNAL=40da453ab30794b0fcb0c5b5cfcb8de6
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;11;2;32;64;;;abi3;C:\Espressif\tools\idf-python\3.11.2\Lib;C:\Espressif\python_env\idf5.5_py3.11_env\Lib;C:\Espressif\python_env\idf5.5_py3.11_env\Lib\site-packages;C:\Espressif\python_env\idf5.5_py3.11_env\Lib\site-packages
+_Python3_INTERPRETER_SIGNATURE:INTERNAL=494e62f2e28b8e4019ddfb845e3b63e1
 //NumPy reason failure
 _Python3_NumPy_REASON_FAILURE:INTERNAL=
 

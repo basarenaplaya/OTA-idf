@@ -28,6 +28,10 @@
 #include "esp_sntp.h"
 #include <time.h>
 
+/* mbedTLS for RSA signature verification */
+#include <mbedtls/pk.h>
+#include <mbedtls/md.h>
+
 #if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 #include "esp_efuse.h"
 #endif
@@ -262,6 +266,175 @@ int compareVersionStrings(const char* v1, const char* v2) {
     return 0;
 }
 
+/**
+ * Download firmware signature from server
+ * Returns pointer to dynamically allocated signature buffer (must be freed by caller)
+ * Returns NULL on failure
+ */
+static uint8_t* download_signature(const char* signature_url, size_t* out_sig_len) {
+    if (!signature_url || !out_sig_len) {
+        ESP_LOGE(TAG, "Invalid signature URL or output buffer");
+        return NULL;
+    }
+
+    esp_http_client_config_t config = {
+        .url = signature_url,
+        .cert_pem = GITHUB_ROOT_CA_CERT,
+        .timeout_ms = 10000,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to initialize HTTP client for signature");
+        return NULL;
+    }
+
+    if (esp_http_client_open(client, 0) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open HTTP connection for signature");
+        esp_http_client_cleanup(client);
+        return NULL;
+    }
+
+    int content_length = esp_http_client_fetch_headers(client);
+    if (content_length <= 0) {
+        ESP_LOGE(TAG, "Signature fetch returned no content");
+        esp_http_client_cleanup(client);
+        return NULL;
+    }
+
+    /* Allocate buffer for signature (typically 256 bytes for 2048-bit RSA) */
+    uint8_t* signature_buffer = malloc(content_length);
+    if (!signature_buffer) {
+        ESP_LOGE(TAG, "Failed to allocate memory for signature (size: %d)", content_length);
+        esp_http_client_cleanup(client);
+        return NULL;
+    }
+
+    int read_len = esp_http_client_read(client, (char*)signature_buffer, content_length);
+    esp_http_client_cleanup(client);
+
+    if (read_len != content_length) {
+        ESP_LOGE(TAG, "Failed to read complete signature. Expected: %d, Got: %d", content_length, read_len);
+        free(signature_buffer);
+        return NULL;
+    }
+
+    *out_sig_len = read_len;
+    ESP_LOGI(TAG, "Successfully downloaded signature (%d bytes)", *out_sig_len);
+    return signature_buffer;
+}
+
+/**
+ * Verify firmware binary with RSA-PSS signature
+ * Returns ESP_OK if signature is valid, ESP_FAIL otherwise
+ */
+static esp_err_t verify_firmware_signature(const char* firmware_url, const uint8_t* signature, size_t sig_len) {
+    if (!firmware_url || !signature || sig_len == 0) {
+        ESP_LOGE(TAG, "Invalid firmware URL or signature");
+        return ESP_FAIL;
+    }
+
+    /* Initialize RSA context and public key */
+    mbedtls_pk_context pk;
+    mbedtls_pk_init(&pk);
+
+    int ret = mbedtls_pk_parse_public_key(&pk, (const unsigned char *)PUBLIC_KEY, strlen(PUBLIC_KEY) + 1);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to parse public key (mbedtls error: %d)", ret);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Public key loaded successfully");
+
+    /* Download firmware and compute SHA256 hash */
+    esp_http_client_config_t config = {
+        .url = firmware_url,
+        .cert_pem = GITHUB_ROOT_CA_CERT,
+        .timeout_ms = 20000,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    if (!client) {
+        ESP_LOGE(TAG, "Failed to initialize HTTP client for firmware verification");
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    if (esp_http_client_open(client, 0) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open HTTP connection for firmware");
+        esp_http_client_cleanup(client);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    int firmware_size = esp_http_client_fetch_headers(client);
+    if (firmware_size <= 0) {
+        ESP_LOGE(TAG, "Firmware fetch returned no content");
+        esp_http_client_cleanup(client);
+        mbedtls_pk_free(&pk);
+        return ESP_FAIL;
+    }
+
+    /* Initialize SHA256 context for hash computation */
+    mbedtls_md_context_t md_ctx;
+    mbedtls_md_init(&md_ctx);
+    const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+    mbedtls_md_setup(&md_ctx, md_info, 0);
+    mbedtls_md_starts(&md_ctx);
+
+    /* Read firmware in chunks and compute hash */
+    uint8_t chunk_buffer[2048];
+    int total_read = 0;
+    int read_len;
+
+    ESP_LOGI(TAG, "Computing SHA256 hash of firmware (%d bytes)...", firmware_size);
+
+    while (total_read < firmware_size) {
+        int to_read = (firmware_size - total_read < sizeof(chunk_buffer)) ? 
+                      (firmware_size - total_read) : sizeof(chunk_buffer);
+        
+        read_len = esp_http_client_read(client, (char*)chunk_buffer, to_read);
+        if (read_len <= 0) {
+            ESP_LOGE(TAG, "Error reading firmware chunk");
+            esp_http_client_cleanup(client);
+            mbedtls_md_free(&md_ctx);
+            mbedtls_pk_free(&pk);
+            return ESP_FAIL;
+        }
+
+        mbedtls_md_update(&md_ctx, chunk_buffer, read_len);
+        total_read += read_len;
+    }
+
+    esp_http_client_cleanup(client);
+
+    /* Finalize hash */
+    uint8_t hash[32];  /* SHA256 = 32 bytes */
+    mbedtls_md_finish(&md_ctx, hash);
+    mbedtls_md_free(&md_ctx);
+
+    ESP_LOGI(TAG, "Firmware hash computed (32 bytes)");
+
+    /* Verify signature */
+    ret = mbedtls_pk_verify(
+        &pk,
+        MBEDTLS_MD_SHA256,
+        hash, 32,
+        signature, sig_len
+    );
+
+    mbedtls_pk_free(&pk);
+
+    if (ret == 0) {
+        ESP_LOGI(TAG, "✓ Firmware signature verification PASSED");
+        return ESP_OK;
+    } else {
+        ESP_LOGE(TAG, "✗ Firmware signature verification FAILED (mbedtls error: %d)", ret);
+        return ESP_FAIL;
+    }
+}
+
 // Core update-checking function: fetch manifest, parse and trigger OTA if newer
 void checkForUpdates(void) {
     esp_http_client_config_t config = {};
@@ -303,14 +476,37 @@ void checkForUpdates(void) {
 
     const cJSON *version_item = cJSON_GetObjectItem(json, "version");
     const cJSON *file_url_item = cJSON_GetObjectItem(json, "file_url");
+    const cJSON *signature_url_item = cJSON_GetObjectItem(json, "signature_url");
 
-    if (cJSON_IsString(version_item) && cJSON_IsString(file_url_item)) {
+    if (cJSON_IsString(version_item) && cJSON_IsString(file_url_item) && cJSON_IsString(signature_url_item)) {
         char* newVersion = version_item->valuestring;
         if(newVersion[0] == 'v') newVersion++;
 
         ESP_LOGI(TAG, "Update Check: Current=%s, Available=%s", FIRMWARE_VERSION, newVersion);
         if (compareVersionStrings(newVersion, FIRMWARE_VERSION) > 0) {
-            ESP_LOGI(TAG, "New version found. Starting update using esp_https_ota component...");
+            ESP_LOGI(TAG, "New version found. Verifying firmware signature before OTA...");
+
+            /* Download and verify signature */
+            size_t signature_len = 0;
+            uint8_t* signature = download_signature(signature_url_item->valuestring, &signature_len);
+            
+            if (signature == NULL) {
+                ESP_LOGE(TAG, "Failed to download firmware signature");
+                cJSON_Delete(json);
+                return;
+            }
+
+            /* Verify firmware with signature */
+            esp_err_t verify_result = verify_firmware_signature(file_url_item->valuestring, signature, signature_len);
+            free(signature);
+
+            if (verify_result != ESP_OK) {
+                ESP_LOGE(TAG, "Firmware signature verification failed - aborting OTA update");
+                cJSON_Delete(json);
+                return;
+            }
+
+            ESP_LOGI(TAG, "Signature verified successfully. Proceeding with OTA update...");
 
             // Configure the OTA component with the data from our manifest
             esp_http_client_config_t ota_http_config = {};
@@ -333,7 +529,7 @@ void checkForUpdates(void) {
             ESP_LOGI(TAG, "No new version available.");
         }
     } else {
-        ESP_LOGE(TAG, "Manifest is missing required fields.");
+        ESP_LOGE(TAG, "Manifest is missing required fields (version, file_url, signature_url).");
     }
     cJSON_Delete(json);
 }
