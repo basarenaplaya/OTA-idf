@@ -2,10 +2,10 @@
 
 
 // --- URL to your manifest file on GitHub ---
-const char* MANIFEST_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/manifest.json";
+const char* MANIFEST_URL = "https://raw.githubusercontent.com/basarenaplaya/OTA-idf/master/manifest.json";
 
 // Firmware Configuration
-const char* FIRMWARE_VERSION = "1.0";
+const char* FIRMWARE_VERSION = "1.1";
 
 // --- Timers (ESP-IDF style) ---
 const long UPDATE_CHECK_INTERVAL_MS = 300000; // 5 minutes
@@ -13,7 +13,15 @@ const long UPDATE_CHECK_INTERVAL_MS = 300000; // 5 minutes
 // --- Security Configuration - Your public key for signing firmware ---
 const char* PUBLIC_KEY = R"KEY(
 -----BEGIN PUBLIC KEY-----
-PASTE-YOUR-PUBLIC-KEY-CONTENT-HERE
+MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAldmSdri9pzwNUcBaFdDY
+e8eH1T93wnACkqrAvrQj65c4DiYnToMvNHWe301iQ2F3sx8Ke3PrehpUJZZAgzL8
+atfHdRrnNgC1YLKYrCZEhIZFVTh+wiSthfdZg+c5b7Ffyl5BVXn2JhDcCFCUFFxk
+LUMoQAsss4TUkUTzW5FaAiUT36/wNflzLwouYKd0/cEjDcraAO8Afa2KqPPYATNE
+3nSda3RSEJm8MIliiYWj82guy9E1DE+QIRcswdVpZHA7ejKuNq2QshSTAWuduiXH
+lZPKFrIAxKd+hySzM6Tv87o0RzA5K9Kg3ZpHLZmfkUuIiNbKTd2qHNHGF4fXUwhG
+YY6fYW1/obKOS8rPDC3SP9025JaSGbNov/ZJs1qVObvWi37dm+ogvGPAvoOx103X
+Y4tYx+yg7uQ2eYgCv3A4w78aH6GgRSFhLs6B15BfuLxmJqKk//rdhrV8oYaknpwo
+a1oBPs4fp8qRaPd0FV9vvGFtTp6FjBZVN3bFv7yRI06/AgMBAAE=
 -----END PUBLIC KEY-----
 )KEY";
 
