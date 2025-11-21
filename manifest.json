@@ -1,5 +1,5 @@
 {
   "version": "1.1",
-  "file_url": "https://github.com/basarenaplaya/OTA-idf/releases/download/v1.1/firmware.bin",
-  "signature_url": "https://github.com/basarenaplaya/OTA-idf/releases/download/v1.1/signature.bin"
+  "file_url": "https://raw.githubusercontent.com/basarenaplaya/OTA-idf/master/release/firmware.enc",
+  "signature_url": "https://raw.githubusercontent.com/basarenaplaya/OTA-idf/master/release/signature.bin"
 }
