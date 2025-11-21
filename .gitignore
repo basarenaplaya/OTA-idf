@@ -21,7 +21,6 @@ components/*/sdkconfig.old
 *.o
 *.d
 *.elf
-*.bin
 *.map
 *.obj
 *.su
@@ -33,3 +32,6 @@ components/*/sdkconfig.old
 
 # Ignore secrets directory
 main/secrets/
+
+# BUT allow release artifacts to be committed
+!release/
