@@ -1,0 +1,76 @@
+#pragma once
+
+
+// --- URL to your manifest file on local Python OTA server ---
+const char* MANIFEST_URL = "https://raw.githubusercontent.com/basarenaplaya/OTA-idf/master/manifest.json";
+
+
+static const uint8_t AES_KEY[32]  = {
+  0x44, 0xca, 0xaf, 0x3c, 0x5b, 0xa9, 0xd2, 0xe0, 
+  0xaf, 0xac, 0x4c, 0x03, 0x3d, 0xdd, 0x9d, 0x56, 
+  0x4d, 0x1b, 0x20, 0xbc, 0xcf, 0x37, 0x60, 0xdb, 
+  0x1f, 0xb0, 0xf9, 0x56, 0xd1, 0xca, 0x42, 0xae
+};
+
+
+static const uint8_t AES_IV[16]  = {
+  0x58, 0xc2, 0x2b, 0x80, 0x24, 0x51, 0x55, 0xe0, 
+  0x38, 0x3d, 0x2b, 0xbe, 0x47, 0xc0, 0xde, 0xa1
+};
+
+// Firmware Configuration
+const char* FIRMWARE_VERSION = "1.0";
+
+// --- Timers (ESP-IDF style) ---
+const long UPDATE_CHECK_INTERVAL_MS = 60000; // 1 minute
+
+// --- Security Configuration - Your public key for signing firmware ---
+const char* PUBLIC_KEY = R"KEY(
+-----BEGIN PUBLIC KEY-----
+MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAldmSdri9pzwNUcBaFdDY
+e8eH1T93wnACkqrAvrQj65c4DiYnToMvNHWe301iQ2F3sx8Ke3PrehpUJZZAgzL8
+atfHdRrnNgC1YLKYrCZEhIZFVTh+wiSthfdZg+c5b7Ffyl5BVXn2JhDcCFCUFFxk
+LUMoQAsss4TUkUTzW5FaAiUT36/wNflzLwouYKd0/cEjDcraAO8Afa2KqPPYATNE
+3nSda3RSEJm8MIliiYWj82guy9E1DE+QIRcswdVpZHA7ejKuNq2QshSTAWuduiXH
+lZPKFrIAxKd+hySzM6Tv87o0RzA5K9Kg3ZpHLZmfkUuIiNbKTd2qHNHGF4fXUwhG
+YY6fYW1/obKOS8rPDC3SP9025JaSGbNov/ZJs1qVObvWi37dm+ogvGPAvoOx103X
+Y4tYx+yg7uQ2eYgCv3A4w78aH6GgRSFhLs6B15BfuLxmJqKk//rdhrV8oYaknpwo
+a1oBPs4fp8qRaPd0FV9vvGFtTp6FjBZVN3bFv7yRI06/AgMBAAE=
+-----END PUBLIC KEY-----
+)KEY";
+
+// --- The self-signed certificate from local OTA server (CN=192.168.0.177) ---
+const char* GITHUB_ROOT_CA_CERT = R"CERT(
+-----BEGIN CERTIFICATE-----
+MIIFgTCCBGmgAwIBAgIQOXJEOvkit1HX02wQ3TE1lTANBgkqhkiG9w0BAQwFADB7
+MQswCQYDVQQGEwJHQjEbMBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYD
+VQQHDAdTYWxmb3JkMRowGAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEhMB8GA1UE
+AwwYQUFBIENlcnRpZmljYXRlIFNlcnZpY2VzMB4XDTE5MDMxMjAwMDAwMFoXDTI4
+MTIzMTIzNTk1OVowgYgxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpOZXcgSmVyc2V5
+MRQwEgYDVQQHEwtKZXJzZXkgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBO
+ZXR3b3JrMS4wLAYDVQQDEyVVU0VSVHJ1c3QgUlNBIENlcnRpZmljYXRpb24gQXV0
+aG9yaXR5MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAgBJlFzYOw9sI
+s9CsVw127c0n00ytUINh4qogTQktZAnczomfzD2p7PbPwdzx07HWezcoEStH2jnG
+vDoZtF+mvX2do2NCtnbyqTsrkfjib9DsFiCQCT7i6HTJGLSR1GJk23+jBvGIGGqQ
+Ijy8/hPwhxR79uQfjtTkUcYRZ0YIUcuGFFQ/vDP+fmyc/xadGL1RjjWmp2bIcmfb
+IWax1Jt4A8BQOujM8Ny8nkz+rwWWNR9XWrf/zvk9tyy29lTdyOcSOk2uTIq3XJq0
+tyA9yn8iNK5+O2hmAUTnAU5GU5szYPeUvlM3kHND8zLDU+/bqv50TmnHa4xgk97E
+xwzf4TKuzJM7UXiVZ4vuPVb+DNBpDxsP8yUmazNt925H+nND5X4OpWaxKXwyhGNV
+icQNwZNUMBkTrNN9N6frXTpsNVzbQdcS2qlJC9/YgIoJk2KOtWbPJYjNhLixP6Q5
+D9kCnusSTJV882sFqV4Wg8y4Z+LoE53MW4LTTLPtW//e5XOsIzstAL81VXQJSdhJ
+WBp/kjbmUZIO8yZ9HE0XvMnsQybQv0FfQKlERPSZ51eHnlAfV1SoPv10Yy+xUGUJ
+5lhCLkMaTLTwJUdZ+gQek9QmRkpQgbLevni3/GcV4clXhB4PY9bpYrrWX1Uu6lzG
+KAgEJTm4Diup8kyXHAc/DVL17e8vgg8CAwEAAaOB8jCB7zAfBgNVHSMEGDAWgBSg
+EQojPpbxB+zirynvgqV/0DCktDAdBgNVHQ4EFgQUU3m/WqorSs9UgOHYm8Cd8rID
+ZsswDgYDVR0PAQH/BAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wEQYDVR0gBAowCDAG
+BgRVHSAAMEMGA1UdHwQ8MDowOKA2oDSGMmh0dHA6Ly9jcmwuY29tb2RvY2EuY29t
+L0FBQUNlcnRpZmljYXRlU2VydmljZXMuY3JsMDQGCCsGAQUFBwEBBCgwJjAkBggr
+BgEFBQcwAYYYaHR0cDovL29jc3AuY29tb2RvY2EuY29tMA0GCSqGSIb3DQEBDAUA
+A4IBAQAYh1HcdCE9nIrgJ7cz0C7M7PDmy14R3iJvm3WOnnL+5Nb+qh+cli3vA0p+
+rvSNb3I8QzvAP+u431yqqcau8vzY7qN7Q/aGNnwU4M309z/+3ri0ivCRlv79Q2R+
+/czSAaF9ffgZGclCKxO/WIu6pKJmBHaIkU4MiRTOok3JMrO66BQavHHxW/BBC5gA
+CiIDEOUMsfnNkjcZ7Tvx5Dq2+UUTJnWvu6rvP3t3O9LEApE9GQDTF1w52z97GA1F
+zZOFli9d31kWTz9RvdVFGD/tSo7oBmF0Ixa1DVBzJ0RHfxBdiSprhTEUxOipakyA
+vGp4z7h/jnZymQyd/teRCBaho1+V
+-----END CERTIFICATE-----
+)CERT";
