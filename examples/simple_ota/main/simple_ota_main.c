@@ -15,12 +15,22 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "nvs_flash.h"
+#include "esp_app_format.h"
+#include "esp_ota_ops.h"
 #include "protocol_examples_common.h"
 
 //OTA component
 #include "esp_ota_secure.h"
 
 static const char *TAG = "simple_ota";
+
+static void print_current_version(void) {
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_app_desc_t app_desc;
+    if (esp_ota_get_partition_description(running, &app_desc) == ESP_OK) {
+        ESP_LOGI(TAG, "Currently running: v%s", app_desc.version);
+    }
+}
 
 void app_main(void)
 {
@@ -40,6 +50,9 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+    // Print current version
+    print_current_version();
+
     // Connect to WiFi (uses sdkconfig settings)
     ESP_LOGI(TAG, "Connecting to WiFi...");
     ESP_ERROR_CHECK(example_connect());
@@ -55,7 +68,7 @@ void app_main(void)
     ESP_LOGI(TAG, "========================================");
     
     while (1) {
-        ESP_LOGI(TAG, "App running...");
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        print_current_version();
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }

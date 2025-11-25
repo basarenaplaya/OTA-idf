@@ -9,6 +9,6 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 # Tell ESP-IDF where to find our components
 set(EXTRA_COMPONENT_DIRS "../../components;$ENV{IDF_PATH}/examples/common_components/protocol_examples_common")
 
-project(simple_ota)
+project(simple_ota VERSION 1.1)
 
 idf_build_set_property(COMPILE_OPTIONS "-Wno-error=all" APPEND)

@@ -19,7 +19,7 @@ static const uint8_t AES_IV[16]  = {
 };
 
 // Firmware Configuration
-const char* FIRMWARE_VERSION = "1.0";
+const char* FIRMWARE_VERSION = "1.1";
 
 // --- Timers (ESP-IDF style) ---
 const long UPDATE_CHECK_INTERVAL_MS = 60000; // 1 minute
