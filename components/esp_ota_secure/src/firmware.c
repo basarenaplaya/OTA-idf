@@ -499,6 +499,9 @@ static esp_err_t download_decrypt_verify_and_flash(const char* firmware_url, con
         return ESP_FAIL;
     }
 
+    /* Mark app as valid and cancel rollback */
+    esp_ota_mark_app_valid_cancel_rollback();
+
     ESP_LOGI(TAG, "OTA update successful!");
     return ESP_OK;
 }

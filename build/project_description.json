@@ -1,7 +1,7 @@
 {
     "version":            "1.2",
     "project_name":       "advanced_https_ota",
-    "project_version":    "6b8d708-dirty",
+    "project_version":    "ad71d35-dirty",
     "project_path":       "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota",
     "idf_path":           "C:/Espressif/frameworks/esp-idf-v5.5.1",
     "build_dir":          "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/build",
@@ -2537,6 +2537,18 @@
             "managed_reqs": [],
             "managed_priv_reqs": [ "protocol_examples_common" ],
             "include_dirs": [ ".", "./ble_helper/include/", "secrets" ]
+        },
+        "esp_ota_secure": {
+            "alias": "idf::esp_ota_secure",
+            "target": "___idf_esp_ota_secure",
+            "prefix": "idf",
+            "dir": "C:/Users/Scuffy/Dev/OTA_Advanced/advanced_https_ota/components/esp_ota_secure",
+            "lib": "__idf_esp_ota_secure",
+            "reqs": [ "esp_http_client", "esp_https_ota", "mbedtls", "json", "app_update", "nvs_flash" ],
+            "priv_reqs": [],
+            "managed_reqs": [],
+            "managed_priv_reqs": [],
+            "include_dirs": [ "include" ]
         },
         "protocol_examples_common": {
             "alias": "idf::protocol_examples_common",
