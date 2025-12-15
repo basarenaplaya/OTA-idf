@@ -42,6 +42,12 @@ static const char *TAG = "esp_ota_secure";
 
 static void obtain_time(void)
 {
+    // Check if SNTP is already initialized
+    if (esp_sntp_enabled()) {
+        ESP_LOGI(TAG, "SNTP already running");
+        return;
+    }
+    
     ESP_LOGI(TAG, "Initializing SNTP");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");

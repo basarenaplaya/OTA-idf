@@ -58,17 +58,14 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect());
     ESP_LOGI(TAG, "✓ WiFi connected!");
 
-    // Call the OTA component - it handles SNTP, download, decrypt, verify, flash!
-    ESP_LOGI(TAG, "Checking for OTA updates...");
-    checkForUpdates();
-
     // Your app code here
     ESP_LOGI(TAG, "========================================");
     ESP_LOGI(TAG, "   Application Running");
     ESP_LOGI(TAG, "========================================");
     
     while (1) {
-        print_current_version();
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        ESP_LOGI(TAG, "Checking for OTA updates...");
+        checkForUpdates();
+        vTaskDelay(pdMS_TO_TICKS(60000));  // Check every 60 seconds
     }
 }
